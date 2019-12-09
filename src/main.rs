@@ -1,11 +1,12 @@
 use rand::Rng;
 mod bf;
 
-const target: &str = "yummy cummy in my tummy";
-const initial_population_size : u64 = 100;
-const mutation_prob: f64 = 0.05;
-const elitism_ratio : f64 = 1. / 10.;
-const can_breed_ratio : f64 = 1. / 2.;
+const TARGET: &str = "yummy cummy in my tummy";
+const INITIAL_POPULATION_SIZE: u64 = 100;
+const MUTATION_PROB: f64 = 0.05;
+const ELITISM_RATIO: f64 = 1. / 10.;
+const CAN_BREED_RATIO: f64 = 1. / 2.;
+const MATE_METHOD_CROSSOVER: bool = false;
 
 type Gene = char;
 
@@ -47,7 +48,7 @@ fn random_gene() -> Gene {
 fn random_chromosome() -> Chromosome {
     let mut chr: Chromosome = Vec::new();
 
-    for _ in 0..target.len() {
+    for _ in 0..TARGET.len() {
         chr.push(random_gene())
     }
 
@@ -57,7 +58,7 @@ fn random_chromosome() -> Chromosome {
 fn fitness(chr: &Chromosome) -> u64 {
     let mut fitness: u64 = 0;
 
-    for (idx, target_gene) in target.chars().enumerate() {
+    for (idx, target_gene) in TARGET.chars().enumerate() {
         if chr[idx] != target_gene {
             fitness += 1;
         }
@@ -73,12 +74,12 @@ fn mate_crossover(x: &Individual, y: &Individual) -> Individual {
 
     for i in 0..crossover {
         let p: f64 = rand_float!();
-        child_chr.push(if p <= mutation_prob { random_gene() } else { x.chromosome[i] })
+        child_chr.push(if p <= MUTATION_PROB { random_gene() } else { x.chromosome[i] })
     }
 
     for i in crossover..len {
         let p: f64 = rand_float!();
-        child_chr.push(if p <= mutation_prob { random_gene() } else { y.chromosome[i] })
+        child_chr.push(if p <= MUTATION_PROB { random_gene() } else { y.chromosome[i] })
     }
 
     Individual::new(child_chr)
@@ -89,8 +90,8 @@ fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
 
     for i in 0..x.chromosome.len() {
         let p: f64 = rand_float!();
-        let x_prob = (1. - mutation_prob) / 2.;
-        let y_prob = 1. - mutation_prob;
+        let x_prob = (1. - MUTATION_PROB) / 2.;
+        let y_prob = 1. - MUTATION_PROB;
 
         child_chr.push(
             if p < x_prob {
@@ -106,12 +107,16 @@ fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
 }
 
 fn mate(x: &Individual, y: &Individual) -> Individual {
-    mate_random_gene(x, y)
+    if MATE_METHOD_CROSSOVER {
+        mate_crossover(x, y)
+    } else {
+        mate_random_gene(x, y)
+    }
 }
 
 fn select(population: &Population) -> Population {
     let mut new_generation: Population = Vec::new();
-    let num_elite: usize = (population.len() as f64 * elitism_ratio).round() as usize;
+    let num_elite: usize = (population.len() as f64 * ELITISM_RATIO).round() as usize;
     let num_rest = population.len() - num_elite;
 
     for i in 0..num_elite {
@@ -119,12 +124,12 @@ fn select(population: &Population) -> Population {
     }
 
     for _ in 0..num_rest {
-        let p1_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
+        let p1_idx = rand_in_range!(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as usize);
         let parent1: &Individual = &population[p1_idx];
         let mut p2_idx;
 
         loop {
-            p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
+            p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as usize);
             if p2_idx != p1_idx {
                 break
             }
@@ -142,7 +147,7 @@ fn main() {
     let mut generation = 0;
     let mut population: Population = Vec::new();
 
-    for _ in 0..initial_population_size {
+    for _ in 0..INITIAL_POPULATION_SIZE {
         population.push(Individual::new(random_chromosome()))
     }
 
