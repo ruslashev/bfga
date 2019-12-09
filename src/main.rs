@@ -11,6 +11,8 @@ const INITIAL_PROGRAM_LENGTH: usize = 500;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 1000;
 
+type BfResult = Result<String, bf::BfErr>;
+
 type Gene = char;
 
 type Chromosome = Vec<Gene>;
@@ -18,14 +20,30 @@ type Chromosome = Vec<Gene>;
 #[derive(Clone)]
 struct Individual {
     chromosome: Chromosome,
-    fitness: u64
+    bf_result: BfResult,
+    fitness: u64,
 }
 
 type Population = Vec<Individual>;
 
 impl Individual {
-    fn new(chr: Chromosome) -> Individual {
-        Individual { fitness: fitness(&chr), chromosome: chr }
+    fn new(chromosome: Chromosome) -> Individual {
+        let source = chromosome.iter().collect::<String>();
+        let bf_result = bf::interpret_brainfuck(&source, INSTR_LIMIT);
+        let fitness = fitness(&bf_result);
+
+        Individual { chromosome, bf_result, fitness }
+    }
+}
+
+impl std::fmt::Display for Individual {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match &self.bf_result {
+            Ok(output)                         => write!(f, "output: \"{}\"", output),
+            Err(bf::BfErr::SyntaxError)        => write!(f, "syntax error"),
+            Err(bf::BfErr::InstrLimitExceeded) => write!(f, "instruction limit exceeded"),
+            Err(bf::BfErr::LogicError)         => write!(f, "logic error"),
+        }
     }
 }
 
@@ -96,10 +114,8 @@ fn diff_test() {
     assert_eq!(string_difference("aaa", "aa"), 'a' as u64);
 }
 
-fn fitness(chr: &Chromosome) -> u64 {
-    let source = chr.iter().collect::<String>();
-
-    let fitness = match bf::interpret_brainfuck(&source, INSTR_LIMIT) {
+fn fitness(bf_result: &BfResult) -> u64 {
+    let fitness = match bf_result {
         Ok(output) => string_difference(&output, TARGET),
         Err(_) => BAD_PROGRAM_PENALTY
     };
@@ -194,9 +210,10 @@ fn main() {
     loop {
         population.sort_by(|x, y| x.fitness.cmp(&y.fitness));
 
-        println!("generation: {:5} fitness: {}",
+        println!("generation: {:5} fitness: {}, status: {}",
                  generation,
-                 population[0].fitness);
+                 population[0].fitness,
+                 population[0]);
 
         // if population[0].fitness == 0 {
         //     break
