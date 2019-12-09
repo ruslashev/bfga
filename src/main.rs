@@ -5,12 +5,12 @@ use std::sync::Arc;
 mod bf;
 
 const TARGET: &str = "hello";
-const INITIAL_POPULATION_SIZE: u64 = 1000;
-const MUTATION_PROB: f64 = 0.05;
-const ELITISM_RATIO: f64 = 1. / 10.;
-const CAN_BREED_RATIO: f64 = 1. / 2.;
-const MATE_METHOD_CROSSOVER: bool = false;
-const INITIAL_PROGRAM_LENGTH: usize = 500;
+const INITIAL_POPULATION_SIZE: u64 = 2000;
+const MUTATION_PROB: f64 = 0.07;
+const ELITISM_RATIO: f64 = 5. / 100.;
+const CAN_BREED_RATIO: f64 = 2. / 3.;
+const MATE_METHOD_CROSSOVER: bool = true;
+const INITIAL_PROGRAM_LENGTH: usize = 400;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 1000;
 
