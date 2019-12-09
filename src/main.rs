@@ -1,11 +1,11 @@
 extern crate ctrlc;
-use rand::Rng;
+use random_fast_rng::Random;
 use std::sync::atomic;
 use std::sync::Arc;
 mod bf;
 
 const TARGET: &str = "hello";
-const INITIAL_POPULATION_SIZE: u64 = 2000;
+const INITIAL_POPULATION_SIZE: u64 = 1000;
 const MUTATION_PROB: f64 = 0.07;
 const ELITISM_RATIO: f64 = 5. / 100.;
 const CAN_BREED_RATIO: f64 = 2. / 3.;
@@ -52,13 +52,13 @@ impl std::fmt::Display for Individual {
 
 macro_rules! rand_in_range {
     ($min:expr, $max:expr) => {
-        rand::thread_rng().gen_range($min, $max)
+        $min + random_fast_rng::local_rng().get_usize() % ($max - $min + 1)
     }
 }
 
 macro_rules! rand_float {
     () => {
-        rand::thread_rng().gen()
+        random_fast_rng::local_rng().gen()
     }
 }
 
