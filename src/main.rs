@@ -144,7 +144,7 @@ fn main() {
 
             loop {
                 p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
-                if p2_idx == p1_idx {
+                if p2_idx != p1_idx {
                     break
                 }
             }
