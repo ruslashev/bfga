@@ -109,6 +109,35 @@ fn mate(x: &Individual, y: &Individual) -> Individual {
     mate_random_gene(x, y)
 }
 
+fn select(population: &Population) -> Population {
+    let mut new_generation: Population = Vec::new();
+    let num_elite: usize = (population.len() as f64 * elitism_ratio).round() as usize;
+    let num_rest = population.len() - num_elite;
+
+    for i in 0..num_elite {
+        new_generation.push(population[i].clone())
+    }
+
+    for _ in 0..num_rest {
+        let p1_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
+        let parent1: &Individual = &population[p1_idx];
+        let mut p2_idx;
+
+        loop {
+            p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
+            if p2_idx != p1_idx {
+                break
+            }
+        }
+
+        let parent2: &Individual = &population[p2_idx];
+
+        new_generation.push(mate(parent1, parent2));
+    }
+
+    new_generation
+}
+
 fn main() {
     let mut generation = 0;
     let mut population: Population = Vec::new();
@@ -129,32 +158,7 @@ fn main() {
             break
         }
 
-        let mut new_generation: Population = Vec::new();
-        let num_elite: usize = (population.len() as f64 * elitism_ratio).round() as usize;
-        let num_rest = population.len() - num_elite;
-
-        for i in 0..num_elite {
-            new_generation.push(population[i].clone())
-        }
-
-        for _ in 0..num_rest {
-            let p1_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
-            let parent1: &Individual = &population[p1_idx];
-            let mut p2_idx;
-
-            loop {
-                p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * can_breed_ratio) as usize);
-                if p2_idx != p1_idx {
-                    break
-                }
-            }
-
-            let parent2: &Individual = &population[p2_idx];
-
-            new_generation.push(mate(parent1, parent2));
-        }
-
-        population = new_generation;
+        population = select(&population);
 
         generation += 1;
     }
