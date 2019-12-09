@@ -1,7 +1,10 @@
 pub enum BfErr {
     SyntaxError,
     InstrLimitExceeded,
+    LogicError,
 }
+
+const TAPE_SIZE: usize = 30_000;
 
 fn check_bf_syntax(src: &String) -> bool {
     let mut balance = 0;
@@ -12,7 +15,10 @@ fn check_bf_syntax(src: &String) -> bool {
                 '[' => 1,
                 ']' => -1,
                 _ => 0
-            }
+            };
+        if balance < 0 {
+            return false
+        }
     }
 
     balance == 0
@@ -21,7 +27,7 @@ fn check_bf_syntax(src: &String) -> bool {
 fn find_matching_closing_bracket(instr_ptr: usize, src: &String) -> usize {
     let mut balance = 0;
 
-    for (idx, instr) in src[instr_ptr..].chars().enumerate() {
+    for (idx, instr) in src[(instr_ptr + 1)..].chars().enumerate() {
         if instr == ']' {
             if balance == 0 {
                 return idx
@@ -57,7 +63,7 @@ fn find_matching_opening_bracket(instr_ptr: usize, src: &String) -> usize {
 pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String, BfErr> {
     let mut instr_ptr: usize = 0;
     let mut tape_ptr: usize = 0;
-    let mut tape: [u8; 30_000] = [0; 30_000];
+    let mut tape: [u8; TAPE_SIZE] = [0; TAPE_SIZE];
     let mut num_instructions = 0;
     let mut output = String::from("");
 
@@ -78,10 +84,38 @@ pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String,
         let instr: char = src.as_bytes()[instr_ptr] as char;
 
         instr_ptr = match instr {
-            '+' => { tape[tape_ptr] += 1; instr_ptr + 1 },
-            '-' => { tape[tape_ptr] -= 1; instr_ptr + 1 },
-            '>' => { tape_ptr += 1;       instr_ptr + 1 },
-            '<' => { tape_ptr -= 1;       instr_ptr + 1 },
+            '+' => {
+                if tape[tape_ptr] < 255 {
+                    tape[tape_ptr] += 1;
+                } else {
+                    return Err(BfErr::LogicError);
+                }
+                instr_ptr + 1
+            },
+            '-' => {
+                if tape[tape_ptr] > 0 {
+                    tape[tape_ptr] -= 1;
+                } else {
+                    return Err(BfErr::LogicError);
+                }
+                instr_ptr + 1
+            },
+            '>' => {
+                if tape_ptr < TAPE_SIZE - 1 {
+                    tape_ptr += 1
+                } else {
+                    return Err(BfErr::LogicError);
+                }
+                instr_ptr + 1
+            },
+            '<' => {
+                if tape_ptr > 0 {
+                    tape_ptr -= 1
+                } else {
+                    return Err(BfErr::LogicError);
+                }
+                instr_ptr + 1
+            },
             '[' =>
                 if tape[tape_ptr] == 0 {
                     find_matching_closing_bracket(instr_ptr, src)
@@ -100,5 +134,16 @@ pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String,
     }
 
     Ok(output)
+}
+
+#[test]
+fn test() {
+    let src = String::from("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>\
+    .>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.");
+
+    match interpret_brainfuck(&src, 10_000) {
+        Ok(output) => assert_eq!(output, "Hello World!\n"),
+        Err(_)     => panic!("oopsie")
+    }
 }
 
