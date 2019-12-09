@@ -1,4 +1,7 @@
+extern crate ctrlc;
 use rand::Rng;
+use std::sync::atomic;
+use std::sync::Arc;
 mod bf;
 
 const TARGET: &str = "hello";
@@ -200,6 +203,11 @@ fn select(population: &Population) -> Population {
 }
 
 fn main() {
+    let running = Arc::new(atomic::AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || { r.store(false, atomic::Ordering::SeqCst); })
+        .expect("Error setting Ctrl-C handler");
+
     let mut generation = 0;
     let mut population: Population = Vec::new();
 
@@ -215,9 +223,11 @@ fn main() {
                  population[0].fitness,
                  population[0]);
 
-        // if population[0].fitness == 0 {
-        //     break
-        // }
+        if running.load(atomic::Ordering::SeqCst) == false {
+            println!("Received interrupt. Exiting...");
+            println!("Source:\n{}", population[0].chromosome.iter().collect::<String>());
+            break
+        }
 
         population = select(&population);
 
