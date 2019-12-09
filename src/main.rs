@@ -1,12 +1,15 @@
 use rand::Rng;
 mod bf;
 
-const TARGET: &str = "yummy cummy in my tummy";
-const INITIAL_POPULATION_SIZE: u64 = 100;
+const TARGET: &str = "hello";
+const INITIAL_POPULATION_SIZE: u64 = 1000;
 const MUTATION_PROB: f64 = 0.05;
 const ELITISM_RATIO: f64 = 1. / 10.;
 const CAN_BREED_RATIO: f64 = 1. / 2.;
 const MATE_METHOD_CROSSOVER: bool = false;
+const INITIAL_PROGRAM_LENGTH: usize = 500;
+const INSTR_LIMIT: u64 = 100_000;
+const BAD_PROGRAM_PENALTY: u64 = 1000;
 
 type Gene = char;
 
@@ -39,8 +42,7 @@ macro_rules! rand_float {
 }
 
 fn random_gene() -> Gene {
-    let valid_genes: String = String::from("abcdefghijklmnopqrstuvwxyz\
-    ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890, .-;:_!\"#%&/()=?@${[]}");
+    let valid_genes: String = String::from("++++----<<>>[].   ");
 
     return valid_genes.as_bytes()[rand_in_range!(0, valid_genes.len() - 1)] as char;
 }
@@ -48,21 +50,59 @@ fn random_gene() -> Gene {
 fn random_chromosome() -> Chromosome {
     let mut chr: Chromosome = Vec::new();
 
-    for _ in 0..TARGET.len() {
+    for _ in 0..INITIAL_PROGRAM_LENGTH {
         chr.push(random_gene())
     }
 
     chr
 }
 
-fn fitness(chr: &Chromosome) -> u64 {
-    let mut fitness: u64 = 0;
+fn string_difference(x: &str, y: &str) -> u64 {
+    let mut difference: u64 = 0;
 
-    for (idx, target_gene) in TARGET.chars().enumerate() {
-        if chr[idx] != target_gene {
-            fitness += 1;
-        }
+    if x == y {
+        return 0
     }
+
+    if x.len() == y.len() {
+        for i in 0..x.len() {
+            difference += (x.as_bytes()[i] as i16 - y.as_bytes()[i] as i16).abs() as u64
+        }
+        return difference
+    }
+
+    let (smaller,larger): (&str, &str) = if x.len() < y.len() { (x, y) } else { (y, x) };
+
+    for i in 0..smaller.len() {
+        difference += (smaller.as_bytes()[i] as i16 - larger.as_bytes()[i] as i16).abs() as u64
+    }
+
+    for i in smaller.len()..larger.len() {
+        difference += larger.as_bytes()[i] as u64
+    }
+
+    difference
+}
+
+#[test]
+fn diff_test() {
+    assert_eq!(string_difference("aaa", "bbb"), 3);
+    assert_eq!(string_difference("ccc", "bbb"), 3);
+
+    assert_eq!(string_difference("aa", "bbb"), 2 + 'b' as u64);
+    assert_eq!(string_difference("bbb", "aa"), 2 + 'b' as u64);
+
+    assert_eq!(string_difference("aa", "aaa"), 'a' as u64);
+    assert_eq!(string_difference("aaa", "aa"), 'a' as u64);
+}
+
+fn fitness(chr: &Chromosome) -> u64 {
+    let source = chr.iter().collect::<String>();
+
+    let fitness = match bf::interpret_brainfuck(&source, INSTR_LIMIT) {
+        Ok(output) => string_difference(&output, TARGET),
+        Err(_) => BAD_PROGRAM_PENALTY
+    };
 
     fitness
 }
@@ -154,14 +194,13 @@ fn main() {
     loop {
         population.sort_by(|x, y| x.fitness.cmp(&y.fitness));
 
-        println!("generation: {:3} string: {} fitness: {}",
+        println!("generation: {:5} fitness: {}",
                  generation,
-                 population[0].chromosome.iter().collect::<String>(),
                  population[0].fitness);
 
-        if population[0].fitness == 0 {
-            break
-        }
+        // if population[0].fitness == 0 {
+        //     break
+        // }
 
         population = select(&population);
 
