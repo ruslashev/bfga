@@ -66,7 +66,7 @@ fn fitness(chr: &Chromosome) -> u64 {
     fitness
 }
 
-fn mate(x: &Individual, y: &Individual) -> Individual {
+fn mate_crossover(x: &Individual, y: &Individual) -> Individual {
     let mut child_chr: Chromosome = Vec::new();
     let len = x.chromosome.len();
     let crossover = rand_in_range!(0, len - 1);
@@ -82,6 +82,31 @@ fn mate(x: &Individual, y: &Individual) -> Individual {
     }
 
     Individual::new(child_chr)
+}
+
+fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
+    let mut child_chr: Chromosome = Vec::new();
+
+    for i in 0..x.chromosome.len() {
+        let p: f64 = rand_float!();
+        let x_prob = (1. - mutation_prob) / 2.;
+        let y_prob = 1. - mutation_prob;
+
+        child_chr.push(
+            if p < x_prob {
+                x.chromosome[i]
+            } else if p < y_prob {
+                y.chromosome[i]
+            } else {
+                random_gene()
+            })
+    }
+
+    Individual::new(child_chr)
+}
+
+fn mate(x: &Individual, y: &Individual) -> Individual {
+    mate_random_gene(x, y)
 }
 
 fn main() {
