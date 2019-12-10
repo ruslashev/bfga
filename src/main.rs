@@ -1,7 +1,6 @@
-extern crate ctrlc;
+use ctrlc;
 use random_fast_rng::Random;
-use std::sync::atomic;
-use std::sync::Arc;
+use std::sync::{atomic, Arc};
 mod bf;
 
 const TARGET: &str = "hello";
@@ -202,6 +201,21 @@ fn select(population: &Population) -> Population {
     new_generation
 }
 
+fn format_source(chromosome: &Chromosome) -> String {
+    let mut chr_str = chromosome.iter().collect::<String>();
+    chr_str.retain(|gene| gene != ' ');
+    chr_str.chars()
+        .enumerate()
+        .flat_map(|(i, c)| {
+            if i != 0 && i % 80 == 0 {
+                Some('\n')
+            } else {
+                None
+            }.into_iter().chain(std::iter::once(c))
+        })
+    .collect::<String>()
+}
+
 fn main() {
     let running = Arc::new(atomic::AtomicBool::new(true));
     let r = running.clone();
@@ -225,7 +239,7 @@ fn main() {
 
         if running.load(atomic::Ordering::SeqCst) == false {
             println!("Received interrupt. Exiting...");
-            println!("Source:\n{}", population[0].chromosome.iter().collect::<String>());
+            println!("Source:\n{}", format_source(&population[0].chromosome));
             break
         }
 
