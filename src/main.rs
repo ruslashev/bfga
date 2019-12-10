@@ -32,7 +32,7 @@ impl Individual {
     fn new(chromosome: Chromosome) -> Individual {
         let source = chromosome.iter().collect::<String>();
         let bf_result = bf::interpret_brainfuck(&source, INSTR_LIMIT);
-        let fitness = fitness(&bf_result);
+        let fitness = fitness(&chromosome, &bf_result);
 
         Individual { chromosome, bf_result, fitness }
     }
@@ -116,9 +116,13 @@ fn diff_test() {
     assert_eq!(string_difference("aaa", "aa"), 'a' as u64);
 }
 
-fn fitness(bf_result: &BfResult) -> u64 {
+fn program_length(chromosome: &Chromosome) -> u64 {
+    chromosome.iter().fold(0, |sum, &x| sum + if x == ' ' { 0 } else { 1 })
+}
+
+fn fitness(chromosome: &Chromosome, bf_result: &BfResult) -> u64 {
     let fitness = match bf_result {
-        Ok(output) => string_difference(&output, TARGET),
+        Ok(output) => string_difference(&output, TARGET) + program_length(chromosome) * 0,
         Err(_) => BAD_PROGRAM_PENALTY
     };
 
