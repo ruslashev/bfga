@@ -243,7 +243,6 @@ fn main() {
 
         if running.load(atomic::Ordering::SeqCst) == false {
             println!("Received interrupt. Exiting...");
-            println!("Source:\n{}", format_source(&population[0].chromosome));
             break
         }
 
@@ -251,5 +250,7 @@ fn main() {
 
         generation += 1;
     }
+
+    println!("Source:\n{}", format_source(&population[0].chromosome));
 }
 
