@@ -220,11 +220,16 @@ fn format_source(chromosome: &Chromosome) -> String {
     .collect::<String>()
 }
 
-fn main() {
-    let running = Arc::new(atomic::AtomicBool::new(true));
+fn install_ctrl_c_handler() -> Arc<atomic::AtomicBool> {
+    let running  = Arc::new(atomic::AtomicBool::new(true));
     let r = running.clone();
     ctrlc::set_handler(move || { r.store(false, atomic::Ordering::SeqCst); })
         .expect("Error setting Ctrl-C handler");
+    running
+}
+
+fn main() {
+    let running = install_ctrl_c_handler();
 
     let mut generation = 0;
     let mut population: Population = Vec::new();
@@ -240,6 +245,10 @@ fn main() {
                  generation,
                  population[0].fitness,
                  population[0]);
+
+        if population[0].fitness == 0 {
+            break
+        }
 
         if running.load(atomic::Ordering::SeqCst) == false {
             println!("Received interrupt. Exiting...");
