@@ -34,8 +34,7 @@ type Population = Vec<Individual>;
 
 impl Individual {
     fn new(chromosome: Chromosome) -> Individual {
-        let source = chromosome.iter().collect::<String>();
-        let bf_result = bf::interpret_brainfuck(&source, INSTR_LIMIT);
+        let bf_result = bf::interpret_brainfuck(&chromosome, INSTR_LIMIT);
         let fitness = fitness(&chromosome, &bf_result);
 
         Individual { chromosome, bf_result, fitness }

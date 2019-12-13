@@ -7,10 +7,10 @@ pub enum BfErr {
 
 const TAPE_SIZE: usize = 30_000;
 
-fn check_bf_syntax(src: &String) -> bool {
+fn check_bf_syntax(src: &Vec<char>) -> bool {
     let mut balance = 0;
 
-    for instr in src.chars() {
+    for instr in src {
         balance +=
             match instr {
                 '[' => 1,
@@ -25,10 +25,10 @@ fn check_bf_syntax(src: &String) -> bool {
     balance == 0
 }
 
-fn find_matching_closing_bracket(instr_ptr: usize, src: &String) -> usize {
+fn find_matching_closing_bracket(instr_ptr: usize, src: &Vec<char>) -> usize {
     let mut balance = 0;
 
-    for (idx, instr) in src[(instr_ptr + 1)..].chars().enumerate() {
+    for (idx, &instr) in src[(instr_ptr + 1)..].iter().enumerate() {
         if instr == ']' {
             if balance == 0 {
                 return idx
@@ -43,10 +43,10 @@ fn find_matching_closing_bracket(instr_ptr: usize, src: &String) -> usize {
     panic!("found no matching bracket but should");
 }
 
-fn find_matching_opening_bracket(instr_ptr: usize, src: &String) -> usize {
+fn find_matching_opening_bracket(instr_ptr: usize, src: &Vec<char>) -> usize {
     let mut balance = 0;
 
-    for (idx, instr) in src[..instr_ptr].chars().rev().enumerate() {
+    for (idx, &instr) in src[..instr_ptr].iter().rev().enumerate() {
         if instr == '[' {
             if balance == 0 {
                 return instr_ptr - idx - 1
@@ -61,7 +61,7 @@ fn find_matching_opening_bracket(instr_ptr: usize, src: &String) -> usize {
     panic!("found no matching bracket but should");
 }
 
-pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String, BfErr> {
+pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<String, BfErr> {
     let mut instr_ptr: usize = 0;
     let mut tape_ptr: usize = 0;
     let mut tape: [u8; TAPE_SIZE] = [0; TAPE_SIZE];
@@ -82,7 +82,7 @@ pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String,
             return Err(BfErr::InstrLimitExceeded)
         }
 
-        let instr: char = src.as_bytes()[instr_ptr] as char;
+        let instr: char = src[instr_ptr] as char;
 
         instr_ptr = match instr {
             '+' => {
@@ -139,10 +139,10 @@ pub fn interpret_brainfuck(src: &String, max_intructions: u64) -> Result<String,
 
 #[test]
 fn test() {
-    let src = String::from("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>\
-    .>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.");
+    let src = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>
+               ---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
 
-    match interpret_brainfuck(&src, 10_000) {
+    match interpret_brainfuck(&src.chars().collect(), 10_000) {
         Ok(output) => assert_eq!(output, "Hello World!\n"),
         Err(_)     => panic!("oopsie")
     }
