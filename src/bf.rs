@@ -25,40 +25,24 @@ fn check_bf_syntax(src: &Vec<char>) -> bool {
     balance == 0
 }
 
-fn find_matching_closing_bracket(instr_ptr: usize, src: &Vec<char>) -> usize {
-    let mut balance = 0;
+fn find_matching_brackets(src: &Vec<char>) -> Vec<usize> {
+    let mut matching_brackets = vec![0; src.len()];
+    let mut count = 0;
+    let mut idx_per_count = vec![0; src.len()];
 
-    for (idx, &instr) in src[(instr_ptr + 1)..].iter().enumerate() {
-        if instr == ']' {
-            if balance == 0 {
-                return idx
-            } else {
-                balance -= 1
-            }
-        } else if instr == '[' {
-            balance += 1
-        }
-    }
-
-    panic!("found no matching bracket but should");
-}
-
-fn find_matching_opening_bracket(instr_ptr: usize, src: &Vec<char>) -> usize {
-    let mut balance = 0;
-
-    for (idx, &instr) in src[..instr_ptr].iter().rev().enumerate() {
+    for (idx, &instr) in src.iter().enumerate() {
         if instr == '[' {
-            if balance == 0 {
-                return instr_ptr - idx - 1
-            } else {
-                balance += 1
-            }
+            idx_per_count[count] = idx;
+            count += 1;
         } else if instr == ']' {
-            balance -= 1
+            count -= 1;
+
+            matching_brackets[idx_per_count[count]] = idx;
+            matching_brackets[idx] = idx_per_count[count];
         }
     }
 
-    panic!("found no matching bracket but should");
+    matching_brackets
 }
 
 pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<String, BfErr> {
@@ -71,6 +55,8 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
     if check_bf_syntax(src) == false {
         return Err(BfErr::SyntaxError)
     }
+
+    let matching_brackets = find_matching_brackets(src);
 
     loop {
         if instr_ptr >= src.len() {
@@ -119,13 +105,13 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
             },
             '[' =>
                 if tape[tape_ptr] == 0 {
-                    find_matching_closing_bracket(instr_ptr, src)
+                    matching_brackets[instr_ptr]
                 } else {
                     instr_ptr + 1
                 },
             ']' =>
                 if tape[tape_ptr] != 0 {
-                    find_matching_opening_bracket(instr_ptr, src)
+                    matching_brackets[instr_ptr]
                 } else {
                     instr_ptr + 1
                 },
@@ -138,7 +124,7 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
 }
 
 #[test]
-fn test() {
+fn hello_world_test() {
     let src = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>
                ---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
 
@@ -146,5 +132,13 @@ fn test() {
         Ok(output) => assert_eq!(output, "Hello World!\n"),
         Err(_)     => panic!("oopsie")
     }
+}
+
+#[test]
+fn matching_brackets_test() {
+    let src = ".[..[]..[].].";
+    let expected = vec![0, 11, 0, 0, 5, 4, 0, 0, 9, 8, 0, 1, 0];
+
+    assert_eq!(expected, find_matching_brackets(&src.chars().collect()));
 }
 
