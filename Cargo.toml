@@ -7,3 +7,6 @@ edition = "2018"
 [dependencies]
 ctrlc = "3.0"
 
+[profile.release]
+debug = true
+
