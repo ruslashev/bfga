@@ -5,6 +5,8 @@ pub enum BfErr {
     LogicError,
 }
 
+pub type BfResult = Result<(String, u64), BfErr>;
+
 const TAPE_SIZE: usize = 1_000;
 
 fn check_bf_syntax(src: &Vec<char>) -> bool {
@@ -45,7 +47,7 @@ fn find_matching_brackets(src: &Vec<char>) -> Vec<usize> {
     matching_brackets
 }
 
-pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<String, BfErr> {
+pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> BfResult {
     let mut instr_ptr: usize = 0;
     let mut tape_ptr: usize = 0;
     let mut tape: [u8; TAPE_SIZE] = [0; TAPE_SIZE];
@@ -114,7 +116,7 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
         }
     }
 
-    Ok(output)
+    Ok((output, num_instructions))
 }
 
 #[test]
@@ -123,8 +125,8 @@ fn hello_world_test() {
                ---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.";
 
     match interpret_brainfuck(&src.chars().collect(), 10_000) {
-        Ok(output) => assert_eq!(output, "Hello World!\n"),
-        Err(_)     => panic!("oopsie")
+        Ok((output, _)) => assert_eq!(output, "Hello World!\n"),
+        Err(_)          => panic!("oopsie")
     }
 }
 

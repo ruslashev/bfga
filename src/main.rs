@@ -17,8 +17,6 @@ static VALID_GENES: &str = "++++++------<>.[]    ";
 
 type Rng = rand::Wyhash64RNG;
 
-type BfResult = Result<String, bf::BfErr>;
-
 type Gene = char;
 
 type Chromosome = Vec<Gene>;
@@ -26,7 +24,7 @@ type Chromosome = Vec<Gene>;
 #[derive(Clone)]
 struct Individual {
     chromosome: Chromosome,
-    bf_result: BfResult,
+    bf_result: bf::BfResult,
     fitness: u64,
 }
 
@@ -44,7 +42,7 @@ impl Individual {
 impl std::fmt::Display for Individual {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.bf_result {
-            Ok(output)                         => write!(f, "output: \"{}\"", output),
+            Ok((output, _))                    => write!(f, "output: \"{}\"", output),
             Err(bf::BfErr::SyntaxError)        => write!(f, "syntax error"),
             Err(bf::BfErr::InstrLimitExceeded) => write!(f, "instruction limit exceeded"),
             Err(bf::BfErr::LogicError)         => write!(f, "logic error"),
@@ -109,9 +107,12 @@ fn program_length(chromosome: &Chromosome) -> u64 {
     chromosome.iter().fold(0, |sum, &x| sum + if x == ' ' { 0 } else { 1 })
 }
 
-fn fitness(chromosome: &Chromosome, bf_result: &BfResult) -> u64 {
+fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     let fitness = match bf_result {
-        Ok(output) => string_difference(&output, TARGET) + program_length(chromosome) * 0,
+        Ok((output, num_instructions)) =>
+            string_difference(&output, TARGET) * 1 +
+            program_length(chromosome) * 0 +
+            num_instructions * 0,
         Err(_) => BAD_PROGRAM_PENALTY
     };
 
