@@ -1,7 +1,7 @@
 use ctrlc;
-use random_fast_rng::Random;
 use std::sync::{atomic, Arc};
 mod bf;
+mod rand;
 
 const TARGET: &str = "hello";
 const INITIAL_POPULATION_SIZE: u64 = 1000;
@@ -12,6 +12,8 @@ const MATE_METHOD_CROSSOVER: bool = true;
 const INITIAL_PROGRAM_LENGTH: usize = 400;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 1000;
+
+type Rng = rand::Wyhash64RNG;
 
 type BfResult = Result<String, bf::BfErr>;
 
@@ -49,29 +51,17 @@ impl std::fmt::Display for Individual {
     }
 }
 
-macro_rules! rand_in_range {
-    ($min:expr, $max:expr) => {
-        $min + random_fast_rng::local_rng().get_usize() % ($max - $min + 1)
-    }
-}
-
-macro_rules! rand_percent {
-    () => {
-        rand_in_range!(0, 100) as u64
-    }
-}
-
-fn random_gene() -> Gene {
+fn random_gene(rng: &mut Rng) -> Gene {
     let valid_genes: String = String::from("++++----<<>>[].   ");
 
-    return valid_genes.as_bytes()[rand_in_range!(0, valid_genes.len() - 1)] as char;
+    return valid_genes.as_bytes()[rng.gen_in_size(valid_genes.len())] as char;
 }
 
-fn random_chromosome() -> Chromosome {
+fn random_chromosome(rng: &mut Rng) -> Chromosome {
     let mut chr: Chromosome = Vec::new();
 
     for _ in 0..INITIAL_PROGRAM_LENGTH {
-        chr.push(random_gene())
+        chr.push(random_gene(rng))
     }
 
     chr
@@ -129,29 +119,29 @@ fn fitness(chromosome: &Chromosome, bf_result: &BfResult) -> u64 {
     fitness
 }
 
-fn mate_crossover(x: &Individual, y: &Individual) -> Individual {
+fn mate_crossover(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     let mut child_chr: Chromosome = Vec::new();
     let len = x.chromosome.len();
-    let crossover = rand_in_range!(0, len - 1);
+    let crossover = rng.gen_in_size(len);
 
     for i in 0..crossover {
-        let p: u64 = rand_percent!();
-        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene() } else { x.chromosome[i] })
+        let p: u64 = rng.gen_percent();
+        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] })
     }
 
     for i in crossover..len {
-        let p: u64 = rand_percent!();
-        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene() } else { y.chromosome[i] })
+        let p: u64 = rng.gen_percent();
+        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] })
     }
 
     Individual::new(child_chr)
 }
 
-fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
+fn mate_random_gene(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     let mut child_chr: Chromosome = Vec::new();
 
     for i in 0..x.chromosome.len() {
-        let p: u64 = rand_percent!();
+        let p: u64 = rng.gen_percent();
         let x_prob = (100 - MUTATION_PROB_PERC) / 2;
         let y_prob = 100 - MUTATION_PROB_PERC;
 
@@ -161,22 +151,22 @@ fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
             } else if p < y_prob {
                 y.chromosome[i]
             } else {
-                random_gene()
+                random_gene(rng)
             })
     }
 
     Individual::new(child_chr)
 }
 
-fn mate(x: &Individual, y: &Individual) -> Individual {
+fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     if MATE_METHOD_CROSSOVER {
-        mate_crossover(x, y)
+        mate_crossover(rng, x, y)
     } else {
-        mate_random_gene(x, y)
+        mate_random_gene(rng, x, y)
     }
 }
 
-fn select(population: &Population) -> Population {
+fn select(rng: &mut Rng, population: &Population) -> Population {
     let mut new_generation: Population = Vec::new();
     let num_elite: usize = (population.len() as f64 * ELITISM_RATIO).round() as usize;
     let num_rest = population.len() - num_elite;
@@ -186,12 +176,12 @@ fn select(population: &Population) -> Population {
     }
 
     for _ in 0..num_rest {
-        let p1_idx = rand_in_range!(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as usize);
+        let p1_idx = rng.gen_in_range(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as u64) as usize;
         let parent1: &Individual = &population[p1_idx];
         let mut p2_idx;
 
         loop {
-            p2_idx = rand_in_range!(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as usize);
+            p2_idx = rng.gen_in_range(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as u64) as usize;
             if p2_idx != p1_idx {
                 break
             }
@@ -199,7 +189,7 @@ fn select(population: &Population) -> Population {
 
         let parent2: &Individual = &population[p2_idx];
 
-        new_generation.push(mate(parent1, parent2));
+        new_generation.push(mate(rng, parent1, parent2));
     }
 
     new_generation
@@ -231,11 +221,13 @@ fn install_ctrl_c_handler() -> Arc<atomic::AtomicBool> {
 fn main() {
     let running = install_ctrl_c_handler();
 
+    let mut rng = rand::Wyhash64RNG::new();
+
     let mut generation = 0;
     let mut population: Population = Vec::new();
 
     for _ in 0..INITIAL_POPULATION_SIZE {
-        population.push(Individual::new(random_chromosome()))
+        population.push(Individual::new(random_chromosome(&mut rng)))
     }
 
     loop {
@@ -256,7 +248,7 @@ fn main() {
             break
         }
 
-        population = select(&population);
+        population = select(&mut rng, &population);
 
         generation += 1;
     }

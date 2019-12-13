@@ -5,6 +5,5 @@ authors = ["Ruslan Akbashev <ruslashev@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-random-fast-rng = "0.1"
 ctrlc = "3.0"
 
