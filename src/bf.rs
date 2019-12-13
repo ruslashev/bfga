@@ -63,28 +63,22 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
             break
         }
 
-        num_instructions += 1;
-        if num_instructions > max_intructions {
-            return Err(BfErr::InstrLimitExceeded)
+        if max_intructions != 0 {
+            num_instructions += 1;
+            if num_instructions > max_intructions {
+                return Err(BfErr::InstrLimitExceeded)
+            }
         }
 
         let instr: char = src[instr_ptr] as char;
 
         instr_ptr = match instr {
             '+' => {
-                if tape[tape_ptr] < 255 {
-                    tape[tape_ptr] += 1;
-                } else {
-                    return Err(BfErr::LogicError);
-                }
+                tape[tape_ptr] = tape[tape_ptr].wrapping_add(1);
                 instr_ptr + 1
             },
             '-' => {
-                if tape[tape_ptr] > 0 {
-                    tape[tape_ptr] -= 1;
-                } else {
-                    return Err(BfErr::LogicError);
-                }
+                tape[tape_ptr] = tape[tape_ptr].wrapping_sub(1);
                 instr_ptr + 1
             },
             '>' => {
