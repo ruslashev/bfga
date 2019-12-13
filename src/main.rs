@@ -3,15 +3,17 @@ use std::sync::{atomic, Arc};
 mod bf;
 mod rand;
 
-const TARGET: &str = "hello";
 const INITIAL_POPULATION_SIZE: u64 = 1000;
-const MUTATION_PROB_PERC: u64 = 7;
+const MUTATION_PROB_PERC: u64 = 9;
 const ELITISM_RATIO: f64 = 5. / 100.;
-const CAN_BREED_RATIO: f64 = 2. / 3.;
+const CAN_BREED_RATIO: f64 = 3. / 4.;
 const MATE_METHOD_CROSSOVER: bool = true;
-const INITIAL_PROGRAM_LENGTH: usize = 400;
+const INITIAL_PROGRAM_LENGTH: usize = 160;
 const INSTR_LIMIT: u64 = 100_000;
-const BAD_PROGRAM_PENALTY: u64 = 1000;
+const BAD_PROGRAM_PENALTY: u64 = 10000;
+
+static TARGET: &str = "hello";
+static VALID_GENES: &str = "++++++------<>.[]    ";
 
 type Rng = rand::Wyhash64RNG;
 
@@ -52,9 +54,7 @@ impl std::fmt::Display for Individual {
 }
 
 fn random_gene(rng: &mut Rng) -> Gene {
-    let valid_genes: String = String::from("++++----<<>>[].   ");
-
-    return valid_genes.as_bytes()[rng.gen_in_size(valid_genes.len())] as char;
+    return VALID_GENES.as_bytes()[rng.gen_in_size(VALID_GENES.len())] as char;
 }
 
 fn random_chromosome(rng: &mut Rng) -> Chromosome {
