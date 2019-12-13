@@ -5,7 +5,7 @@ pub enum BfErr {
     LogicError,
 }
 
-const TAPE_SIZE: usize = 30_000;
+const TAPE_SIZE: usize = 1_000;
 
 fn check_bf_syntax(src: &Vec<char>) -> bool {
     let mut balance = 0;
@@ -70,7 +70,7 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> Result<Stri
             }
         }
 
-        let instr: char = src[instr_ptr] as char;
+        let instr: char = src[instr_ptr];
 
         instr_ptr = match instr {
             '+' => {
