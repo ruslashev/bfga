@@ -5,7 +5,7 @@ mod bf;
 
 const TARGET: &str = "hello";
 const INITIAL_POPULATION_SIZE: u64 = 1000;
-const MUTATION_PROB: f64 = 0.07;
+const MUTATION_PROB_PERC: u64 = 7;
 const ELITISM_RATIO: f64 = 5. / 100.;
 const CAN_BREED_RATIO: f64 = 2. / 3.;
 const MATE_METHOD_CROSSOVER: bool = true;
@@ -55,9 +55,9 @@ macro_rules! rand_in_range {
     }
 }
 
-macro_rules! rand_float {
+macro_rules! rand_percent {
     () => {
-        random_fast_rng::local_rng().gen()
+        rand_in_range!(0, 100) as u64
     }
 }
 
@@ -135,13 +135,13 @@ fn mate_crossover(x: &Individual, y: &Individual) -> Individual {
     let crossover = rand_in_range!(0, len - 1);
 
     for i in 0..crossover {
-        let p: f64 = rand_float!();
-        child_chr.push(if p <= MUTATION_PROB { random_gene() } else { x.chromosome[i] })
+        let p: u64 = rand_percent!();
+        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene() } else { x.chromosome[i] })
     }
 
     for i in crossover..len {
-        let p: f64 = rand_float!();
-        child_chr.push(if p <= MUTATION_PROB { random_gene() } else { y.chromosome[i] })
+        let p: u64 = rand_percent!();
+        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene() } else { y.chromosome[i] })
     }
 
     Individual::new(child_chr)
@@ -151,9 +151,9 @@ fn mate_random_gene(x: &Individual, y: &Individual) -> Individual {
     let mut child_chr: Chromosome = Vec::new();
 
     for i in 0..x.chromosome.len() {
-        let p: f64 = rand_float!();
-        let x_prob = (1. - MUTATION_PROB) / 2.;
-        let y_prob = 1. - MUTATION_PROB;
+        let p: u64 = rand_percent!();
+        let x_prob = (100 - MUTATION_PROB_PERC) / 2;
+        let y_prob = 100 - MUTATION_PROB_PERC;
 
         child_chr.push(
             if p < x_prob {
