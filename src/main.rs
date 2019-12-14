@@ -6,10 +6,10 @@ mod rand;
 const INITIAL_POPULATION_SIZE: u64 = 1000;
 const MUTATION_PROB_PERC: u64 = 9;
 const ELITISM_RATIO: f64 = 5. / 100.;
-const CAN_BREED_RATIO: f64 = 3. / 4.;
 const INITIAL_PROGRAM_LENGTH: usize = 160;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 10000;
+const TOURNAMENT_SIZE: u64 = 2;
 
 static TARGET: &str = "hello";
 static VALID_GENES: &str = "++++++------<>.[]    ";
@@ -136,6 +136,20 @@ fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     Individual::new(child_chr)
 }
 
+fn tournament_select(rng: &mut Rng, population: &Population, k: u64) -> usize {
+    let mut best = rng.gen_in_size(population.len());
+
+    for _ in 1..k - 1 {
+        let candidate = rng.gen_in_size(population.len());
+
+        if population[candidate].fitness < population[best].fitness {
+            best = candidate;
+        }
+    }
+
+    best
+}
+
 fn select(rng: &mut Rng, population: &Population) -> Population {
     let mut new_generation: Population = Vec::new();
     let num_elite: usize = (population.len() as f64 * ELITISM_RATIO).round() as usize;
@@ -146,18 +160,8 @@ fn select(rng: &mut Rng, population: &Population) -> Population {
     }
 
     for _ in 0..num_rest {
-        let p1_idx = rng.gen_in_range(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as u64) as usize;
-        let parent1: &Individual = &population[p1_idx];
-        let mut p2_idx;
-
-        loop {
-            p2_idx = rng.gen_in_range(0, ((population.len() - 1) as f64 * CAN_BREED_RATIO) as u64) as usize;
-            if p2_idx != p1_idx {
-                break
-            }
-        }
-
-        let parent2: &Individual = &population[p2_idx];
+        let parent1 = &population[tournament_select(rng, population, TOURNAMENT_SIZE)];
+        let parent2 = &population[tournament_select(rng, population, TOURNAMENT_SIZE)];
 
         new_generation.push(mate(rng, parent1, parent2));
     }
