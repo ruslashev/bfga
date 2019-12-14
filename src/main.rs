@@ -41,10 +41,8 @@ impl Individual {
 impl std::fmt::Display for Individual {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.bf_result {
-            Ok((output, _))                    => write!(f, "output: \"{}\"", output),
-            Err(bf::BfErr::SyntaxError)        => write!(f, "syntax error"),
-            Err(bf::BfErr::InstrLimitExceeded) => write!(f, "instruction limit exceeded"),
-            Err(bf::BfErr::LogicError)         => write!(f, "logic error"),
+            Ok((output, _)) => write!(f, "output: \"{}\"", output),
+            Err(err)        => write!(f, "{}", err),
         }
     }
 }

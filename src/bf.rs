@@ -7,6 +7,16 @@ pub enum BfErr {
 
 pub type BfResult = Result<(String, u64), BfErr>;
 
+impl std::fmt::Display for BfErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            BfErr::SyntaxError        => write!(f, "syntax error"),
+            BfErr::InstrLimitExceeded => write!(f, "instruction limit exceeded"),
+            BfErr::LogicError         => write!(f, "logic error"),
+        }
+    }
+}
+
 const TAPE_SIZE: usize = 1_000;
 
 fn check_bf_syntax(src: &Vec<char>) -> bool {
