@@ -7,7 +7,6 @@ const INITIAL_POPULATION_SIZE: u64 = 1000;
 const MUTATION_PROB_PERC: u64 = 9;
 const ELITISM_RATIO: f64 = 5. / 100.;
 const CAN_BREED_RATIO: f64 = 3. / 4.;
-const MATE_METHOD_CROSSOVER: bool = true;
 const INITIAL_PROGRAM_LENGTH: usize = 160;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 10000;
@@ -119,7 +118,7 @@ fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     fitness
 }
 
-fn mate_crossover(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
+fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     let mut child_chr: Chromosome = Vec::new();
     let len = x.chromosome.len();
     let crossover = rng.gen_in_size(len);
@@ -135,35 +134,6 @@ fn mate_crossover(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
     }
 
     Individual::new(child_chr)
-}
-
-fn mate_random_gene(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
-    let mut child_chr: Chromosome = Vec::new();
-
-    for i in 0..x.chromosome.len() {
-        let p: u64 = rng.gen_percent();
-        let x_prob = (100 - MUTATION_PROB_PERC) / 2;
-        let y_prob = 100 - MUTATION_PROB_PERC;
-
-        child_chr.push(
-            if p < x_prob {
-                x.chromosome[i]
-            } else if p < y_prob {
-                y.chromosome[i]
-            } else {
-                random_gene(rng)
-            })
-    }
-
-    Individual::new(child_chr)
-}
-
-fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
-    if MATE_METHOD_CROSSOVER {
-        mate_crossover(rng, x, y)
-    } else {
-        mate_random_gene(rng, x, y)
-    }
 }
 
 fn select(rng: &mut Rng, population: &Population) -> Population {
