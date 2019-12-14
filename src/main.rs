@@ -77,7 +77,7 @@ fn string_difference(x: &str, y: &str) -> u64 {
         return difference
     }
 
-    let (smaller,larger): (&str, &str) = if x.len() < y.len() { (x, y) } else { (y, x) };
+    let (smaller, larger): (&str, &str) = if x.len() < y.len() { (x, y) } else { (y, x) };
 
     for i in 0..smaller.len() {
         difference += (smaller.as_bytes()[i] as i16 - larger.as_bytes()[i] as i16).abs() as u64
@@ -172,23 +172,28 @@ fn select(rng: &mut Rng, population: &Population) -> Population {
 fn format_source(chromosome: &Chromosome) -> String {
     let mut chr_str = chromosome.iter().collect::<String>();
     chr_str.retain(|gene| gene != ' ');
-    chr_str.chars()
+    chr_str
+        .chars()
         .enumerate()
         .flat_map(|(i, c)| {
             if i != 0 && i % 80 == 0 {
                 Some('\n')
             } else {
                 None
-            }.into_iter().chain(std::iter::once(c))
+            }
+            .into_iter()
+            .chain(std::iter::once(c))
         })
-    .collect::<String>()
+        .collect::<String>()
 }
 
 fn install_ctrl_c_handler() -> Arc<atomic::AtomicBool> {
-    let running  = Arc::new(atomic::AtomicBool::new(true));
+    let running = Arc::new(atomic::AtomicBool::new(true));
     let r = running.clone();
-    ctrlc::set_handler(move || { r.store(false, atomic::Ordering::SeqCst); })
-        .expect("Error setting Ctrl-C handler");
+    ctrlc::set_handler(move || {
+        r.store(false, atomic::Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
     running
 }
 

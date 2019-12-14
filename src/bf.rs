@@ -78,11 +78,11 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> BfResult {
             '+' => {
                 tape[tape_ptr] = tape[tape_ptr].wrapping_add(1);
                 instr_ptr + 1
-            },
+            }
             '-' => {
                 tape[tape_ptr] = tape[tape_ptr].wrapping_sub(1);
                 instr_ptr + 1
-            },
+            }
             '>' => {
                 if tape_ptr < TAPE_SIZE - 1 {
                     tape_ptr += 1
@@ -90,7 +90,7 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> BfResult {
                     return Err(BfErr::LogicError);
                 }
                 instr_ptr + 1
-            },
+            }
             '<' => {
                 if tape_ptr > 0 {
                     tape_ptr -= 1
@@ -98,21 +98,26 @@ pub fn interpret_brainfuck(src: &Vec<char>, max_intructions: u64) -> BfResult {
                     return Err(BfErr::LogicError);
                 }
                 instr_ptr + 1
-            },
-            '[' =>
+            }
+            '[' => {
                 if tape[tape_ptr] == 0 {
                     matching_brackets[instr_ptr]
                 } else {
                     instr_ptr + 1
-                },
-            ']' =>
+                }
+            }
+            ']' => {
                 if tape[tape_ptr] != 0 {
                     matching_brackets[instr_ptr]
                 } else {
                     instr_ptr + 1
-                },
-            '.' => { output.push(tape[tape_ptr] as char); instr_ptr + 1 },
-            _   => instr_ptr + 1
+                }
+            }
+            '.' => {
+                output.push(tape[tape_ptr] as char);
+                instr_ptr + 1
+            }
+            _ => instr_ptr + 1,
         }
     }
 

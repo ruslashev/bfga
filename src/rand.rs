@@ -4,7 +4,7 @@ pub struct Wyhash64RNG {
     state: u64,
 }
 
-impl Wyhash64RNG  {
+impl Wyhash64RNG {
     pub fn new() -> Wyhash64RNG {
         Self::new_fixed(time_seed())
     }
