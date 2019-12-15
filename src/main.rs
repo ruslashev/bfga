@@ -116,22 +116,25 @@ fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     fitness
 }
 
-fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
-    let mut child_chr: Chromosome = Vec::new();
+fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> (Individual, Individual) {
+    let mut child1_chr: Chromosome = Vec::new();
+    let mut child2_chr: Chromosome = Vec::new();
     let len = x.chromosome.len();
     let crossover = rng.gen_in_size(len);
 
     for i in 0..crossover {
         let p: u64 = rng.gen_percent();
-        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] })
+        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] });
+        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] });
     }
 
     for i in crossover..len {
         let p: u64 = rng.gen_percent();
-        child_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] })
+        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] });
+        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] });
     }
 
-    Individual::new(child_chr)
+    (Individual::new(child1_chr), Individual::new(child2_chr))
 }
 
 fn tournament_select(rng: &mut Rng, population: &Population, k: u64) -> usize {
@@ -157,11 +160,14 @@ fn select(rng: &mut Rng, population: &Population) -> Population {
         new_generation.push(population[i].clone())
     }
 
-    for _ in 0..num_rest {
+    for _ in 0..num_rest / 2 {
         let parent1 = &population[tournament_select(rng, population, TOURNAMENT_SIZE)];
         let parent2 = &population[tournament_select(rng, population, TOURNAMENT_SIZE)];
 
-        new_generation.push(mate(rng, parent1, parent2));
+        let (child1, child2) = mate(rng, parent1, parent2);
+
+        new_generation.push(child1);
+        new_generation.push(child2);
     }
 
     new_generation
