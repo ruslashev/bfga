@@ -4,15 +4,18 @@ mod bf;
 mod rand;
 
 const INITIAL_POPULATION_SIZE: u64 = 1000;
-const MUTATION_PROB_PERC: u64 = 9;
+const MUTATION_PROB_PERC: u64 = 10;
 const ELITISM_RATIO: f64 = 5. / 100.;
 const INITIAL_PROGRAM_LENGTH: usize = 160;
 const INSTR_LIMIT: u64 = 100_000;
 const BAD_PROGRAM_PENALTY: u64 = 10000;
 const TOURNAMENT_SIZE: u64 = 2;
+const REMOVE_MUT_PROB: u64 = 20;
+const INSERT_MUT_PROB: u64 = 10;
+const MODIFY_MUT_PROB: u64 = 70;
 
 static TARGET: &str = "hello";
-static VALID_GENES: &str = "++++++------<>.[]    ";
+static VALID_GENES: &str = "+++++++-------<<>>.[]";
 
 type Rng = rand::Wyhash64RNG;
 
@@ -116,6 +119,25 @@ fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     fitness
 }
 
+fn mutate(rng: &mut Rng, chr: &mut Chromosome)  {
+    for i in 0..chr.len() {
+        let p = rng.gen_percent();
+        if p > MUTATION_PROB_PERC {
+            continue;
+        }
+
+        let mutation = rng.gen_percent();
+
+        if mutation <= REMOVE_MUT_PROB {
+            chr[i] = ' ';
+        } else if mutation <= REMOVE_MUT_PROB + INSERT_MUT_PROB {
+            chr.insert(i, random_gene(rng));
+        } else if mutation <= REMOVE_MUT_PROB + INSERT_MUT_PROB + MODIFY_MUT_PROB {
+            chr[i] = random_gene(rng);
+        }
+    }
+}
+
 fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> (Individual, Individual) {
     let (mut child1_chr, mut child2_chr) = (Vec::new(), Vec::new());
     let (smaller, larger) =
@@ -127,21 +149,21 @@ fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> (Individual, Individua
     let crossover = rng.gen_in_size(smaller.len());
 
     for i in 0..crossover {
-        let p: u64 = rng.gen_percent();
-        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { smaller[i] });
-        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
+        child1_chr.push(smaller[i]);
+        child2_chr.push(larger[i]);
     }
 
     for i in crossover..smaller.len() {
-        let p: u64 = rng.gen_percent();
-        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
-        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { smaller[i] });
+        child1_chr.push(larger[i]);
+        child2_chr.push(smaller[i]);
     }
 
     for i in smaller.len()..larger.len() {
-        let p: u64 = rng.gen_percent();
-        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
+        child1_chr.push(larger[i]);
     }
+
+    mutate(rng, &mut child1_chr);
+    mutate(rng, &mut child2_chr);
 
     (Individual::new(child1_chr), Individual::new(child2_chr))
 }
