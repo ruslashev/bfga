@@ -117,21 +117,30 @@ fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
 }
 
 fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> (Individual, Individual) {
-    let mut child1_chr: Chromosome = Vec::new();
-    let mut child2_chr: Chromosome = Vec::new();
-    let len = x.chromosome.len();
-    let crossover = rng.gen_in_size(len);
+    let (mut child1_chr, mut child2_chr) = (Vec::new(), Vec::new());
+    let (smaller, larger) =
+        if x.chromosome.len() < y.chromosome.len() {
+            (&x.chromosome, &y.chromosome)
+        } else {
+            (&y.chromosome, &x.chromosome)
+        };
+    let crossover = rng.gen_in_size(smaller.len());
 
     for i in 0..crossover {
         let p: u64 = rng.gen_percent();
-        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] });
-        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] });
+        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { smaller[i] });
+        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
     }
 
-    for i in crossover..len {
+    for i in crossover..smaller.len() {
         let p: u64 = rng.gen_percent();
-        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { y.chromosome[i] });
-        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { x.chromosome[i] });
+        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
+        child2_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { smaller[i] });
+    }
+
+    for i in smaller.len()..larger.len() {
+        let p: u64 = rng.gen_percent();
+        child1_chr.push(if p <= MUTATION_PROB_PERC { random_gene(rng) } else { larger[i] });
     }
 
     (Individual::new(child1_chr), Individual::new(child2_chr))
