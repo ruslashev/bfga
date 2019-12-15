@@ -137,7 +137,7 @@ fn mate(rng: &mut Rng, x: &Individual, y: &Individual) -> Individual {
 fn tournament_select(rng: &mut Rng, population: &Population, k: u64) -> usize {
     let mut best = rng.gen_in_size(population.len());
 
-    for _ in 1..k - 1 {
+    for _ in 0..k - 1 {
         let candidate = rng.gen_in_size(population.len());
 
         if population[candidate].fitness < population[best].fitness {
