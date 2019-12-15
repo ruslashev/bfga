@@ -109,10 +109,13 @@ fn program_length(chromosome: &Chromosome) -> u64 {
 
 fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     let fitness = match bf_result {
-        Ok((output, num_instructions)) =>
-            string_difference(&output, TARGET) * 1 +
-            program_length(chromosome) * 0 +
-            num_instructions * 0,
+        Ok((output, num_instructions)) => {
+            let diff = string_difference(&output, TARGET);
+            let length_factor = (diff == 0) as u64;
+            diff * 10 +
+            program_length(chromosome) * length_factor +
+            num_instructions * 0
+        },
         Err(_) => BAD_PROGRAM_PENALTY
     };
 
