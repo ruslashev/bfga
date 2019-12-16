@@ -3,12 +3,13 @@ use std::sync::{atomic, Arc};
 mod bf;
 mod rand;
 
-const INITIAL_POPULATION_SIZE: u64 = 1000;
+const INITIAL_POPULATION_SIZE: u64 = 2000;
 const MUTATION_PROB_PERC: u64 = 10;
 const ELITISM_RATIO: f64 = 5. / 100.;
-const INITIAL_PROGRAM_LENGTH: usize = 160;
+const INITIAL_PROGRAM_LENGTH: usize = 100;
 const INSTR_LIMIT: u64 = 100_000;
-const BAD_PROGRAM_PENALTY: u64 = 10000;
+const BAD_PROGRAM_PENALTY: u64 = 100000;
+const FIXED_PROGRAM_LENGTH_FITNESS_COST: u64 = 10000;
 const TOURNAMENT_SIZE: u64 = 2;
 const REMOVE_MUT_PROB: u64 = 20;
 const INSERT_MUT_PROB: u64 = 10;
@@ -111,10 +112,14 @@ fn fitness(chromosome: &Chromosome, bf_result: &bf::BfResult) -> u64 {
     let fitness = match bf_result {
         Ok((output, num_instructions)) => {
             let diff = string_difference(&output, TARGET);
-            let length_factor = (diff == 0) as u64;
-            diff * 10 +
-            program_length(chromosome) * length_factor +
-            num_instructions * 0
+            let length_term =
+                if diff == 0 {
+                    program_length(chromosome) + num_instructions
+                } else {
+                    FIXED_PROGRAM_LENGTH_FITNESS_COST
+                };
+
+            diff + length_term
         },
         Err(_) => BAD_PROGRAM_PENALTY
     };
